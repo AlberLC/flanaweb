@@ -23,6 +23,7 @@ export interface VirtualFile {
     name: string
     url: string
     embedUrl: string
+    thumbnailUrl: string
     createdAt: string
     expiresAt: string | null
 }
