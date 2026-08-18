@@ -1,9 +1,9 @@
 import { config } from '@/config'
 import { apiFetch } from '@/services/http_client'
-import type { CreateUploadResponse, UploadState, VirtualFile } from '@/types/interfaces'
+import type { CreateUploadResponse, FileResponse, UploadState } from '@/types/interfaces'
 import { hashBlob } from '@/utils/crypto'
 
-export async function completeUpload(uploadId: string, signal: AbortSignal): Promise<VirtualFile> {
+export async function completeUpload(uploadId: string, signal: AbortSignal): Promise<FileResponse> {
     const response = await apiFetch(
         `${import.meta.env.VITE_API_ORIGIN}${config.API_UPLOADS_ENDPOINT}/${uploadId}/complete`,
         {
@@ -13,14 +13,17 @@ export async function completeUpload(uploadId: string, signal: AbortSignal): Pro
     )
 
     const {
+        id,
         name,
         url,
         embed_url: embedUrl,
         thumbnail_url: thumbnailUrl,
+        width,
+        height,
         created_at: createdAt,
         expires_at: expiresAt
     } = await response.json()
-    return { name, url, embedUrl, thumbnailUrl, createdAt, expiresAt }
+    return { id, name, url, embedUrl, thumbnailUrl, width, height, createdAt, expiresAt }
 }
 
 export async function createUpload(
@@ -88,7 +91,7 @@ export async function uploadFile(
     uploadedChunks: Set<number>,
     signal: AbortSignal,
     onProgress: (progress: number) => void
-): Promise<VirtualFile> {
+): Promise<FileResponse> {
     const totalChunks = Math.ceil(file.size / chunkSize)
     let chunkIndex = 0
     let completedChunks = uploadedChunks.size

@@ -5,6 +5,18 @@ export interface CreateUploadResponse {
     chunkSize: number
 }
 
+export interface FileResponse {
+    id: string
+    name: string
+    url: string
+    embedUrl: string
+    thumbnailUrl: string
+    width: number | null
+    height: number | null
+    createdAt: string
+    expiresAt: string | null
+}
+
 export interface UploadContext {
     uploadId?: string
     status: UploadStatus
@@ -17,13 +29,4 @@ export interface UploadContext {
 export interface UploadState {
     chunkSize: number
     uploadedChunks: Set<number>
-}
-
-export interface VirtualFile {
-    name: string
-    url: string
-    embedUrl: string
-    thumbnailUrl: string
-    createdAt: string
-    expiresAt: string | null
 }
