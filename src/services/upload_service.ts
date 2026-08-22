@@ -15,6 +15,7 @@ export async function completeUpload(uploadId: string, signal: AbortSignal): Pro
     const {
         id,
         name,
+        mime_type: mimeType,
         url,
         embed_url: embedUrl,
         thumbnail_url: thumbnailUrl,
@@ -23,7 +24,7 @@ export async function completeUpload(uploadId: string, signal: AbortSignal): Pro
         created_at: createdAt,
         expires_at: expiresAt
     } = await response.json()
-    return { id, name, url, embedUrl, thumbnailUrl, width, height, createdAt, expiresAt }
+    return { id, name, mimeType, url, embedUrl, thumbnailUrl, width, height, createdAt, expiresAt }
 }
 
 export async function createUpload(

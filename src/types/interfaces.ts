@@ -8,6 +8,7 @@ export interface CreateUploadResponse {
 export interface FileResponse {
     id: string
     name: string
+    mimeType: string
     url: string
     embedUrl: string
     thumbnailUrl: string
