@@ -153,7 +153,7 @@ async function uploadFileItem(file: File): Promise<void> {
 
         uploadContext.status = UploadStatus.UPLOADED
         uploadContext.fileName = fileResponse.name
-        uploadContext.fileUrl = `${import.meta.env.VITE_API_ORIGIN}${config.API_BASE_URL}${fileResponse.url}`
+        uploadContext.fileUrl = `${config.API_BASE_URL}${fileResponse.url}`
     } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
             uploadContext.status = UploadStatus.PAUSED

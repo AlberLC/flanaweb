@@ -4,13 +4,10 @@ import type { CreateUploadResponse, FileResponse, UploadState } from '@/types/in
 import { hashBlob } from '@/utils/crypto'
 
 export async function completeUpload(uploadId: string, signal: AbortSignal): Promise<FileResponse> {
-    const response = await apiFetch(
-        `${import.meta.env.VITE_API_ORIGIN}${config.API_UPLOADS_ENDPOINT}/${uploadId}/complete`,
-        {
-            method: 'POST',
-            signal
-        }
-    )
+    const response = await apiFetch(`${config.API_UPLOADS_ENDPOINT}/${uploadId}/complete`, {
+        method: 'POST',
+        signal
+    })
 
     const {
         id,
@@ -32,7 +29,7 @@ export async function createUpload(
     expiresIn: number | null,
     signal: AbortSignal
 ): Promise<CreateUploadResponse> {
-    const response = await apiFetch(`${import.meta.env.VITE_API_ORIGIN}${config.API_UPLOADS_ENDPOINT}`, {
+    const response = await apiFetch(`${config.API_UPLOADS_ENDPOINT}`, {
         method: 'POST',
         body: JSON.stringify({
             file_name: file.name,
@@ -48,13 +45,10 @@ export async function createUpload(
 
 export async function getUploadState(uploadId: string, signal: AbortSignal): Promise<UploadState | undefined> {
     try {
-        const response = await apiFetch(
-            `${import.meta.env.VITE_API_ORIGIN}${config.API_UPLOADS_ENDPOINT}/${uploadId}`,
-            {
-                method: 'GET',
-                signal
-            }
-        )
+        const response = await apiFetch(`${config.API_UPLOADS_ENDPOINT}/${uploadId}`, {
+            method: 'GET',
+            signal
+        })
 
         const { chunk_size: chunkSize, uploaded_chunks: uploadedChunks } = await response.json()
         return { chunkSize, uploadedChunks: new Set<number>(uploadedChunks) }
@@ -73,7 +67,7 @@ export async function uploadChunk(
     const blob = file.slice(start, end)
     const checksum = await hashBlob(blob)
 
-    await apiFetch(`${import.meta.env.VITE_API_ORIGIN}${config.API_UPLOADS_ENDPOINT}/${uploadId}/chunks`, {
+    await apiFetch(`${config.API_UPLOADS_ENDPOINT}/${uploadId}/chunks`, {
         method: 'PATCH',
         headers: {
             'Chunk-Index': chunkIndex.toString(),
