@@ -6,9 +6,6 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 import { es } from 'vuetify/locale'
 
 export default createVuetify({
-    theme: {
-        defaultTheme: 'system'
-    },
     icons: {
         aliases: {
             ...aliases,
