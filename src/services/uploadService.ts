@@ -1,27 +1,10 @@
 import { config } from '@/config'
-import { apiFetch } from '@/services/http_client'
-import type { CreateUploadResponse, FileResponse, UploadState } from '@/types/interfaces'
+import type { CreateUploadResponse, FileResponse, UploadState } from '@/interfaces'
+import { apiFetch, apiFetchJson } from '@/services/httpClient'
 import { hashBlob } from '@/utils/crypto'
 
 export async function completeUpload(uploadId: string, signal: AbortSignal): Promise<FileResponse> {
-    const response = await apiFetch(`${config.API_UPLOADS_ENDPOINT}/${uploadId}/complete`, {
-        method: 'POST',
-        signal
-    })
-
-    const {
-        id,
-        name,
-        mime_type: mimeType,
-        url,
-        embed_url: embedUrl,
-        thumbnail_url: thumbnailUrl,
-        width,
-        height,
-        created_at: createdAt,
-        expires_at: expiresAt
-    } = await response.json()
-    return { id, name, mimeType, url, embedUrl, thumbnailUrl, width, height, createdAt, expiresAt }
+    return apiFetchJson<FileResponse>(`${config.API_UPLOADS_ENDPOINT}/${uploadId}/complete`, { method: 'POST', signal })
 }
 
 export async function createUpload(
@@ -29,29 +12,25 @@ export async function createUpload(
     expiresIn: number | null,
     signal: AbortSignal
 ): Promise<CreateUploadResponse> {
-    const response = await apiFetch(`${config.API_UPLOADS_ENDPOINT}`, {
+    return apiFetchJson<CreateUploadResponse>(`${config.API_UPLOADS_ENDPOINT}`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
             file_name: file.name,
             file_size: file.size,
             ...(expiresIn !== null && { file_expires_in: expiresIn })
-        }),
+        },
         signal
     })
-
-    const { id, chunk_size: chunkSize } = await response.json()
-    return { id, chunkSize }
 }
 
 export async function getUploadState(uploadId: string, signal: AbortSignal): Promise<UploadState | undefined> {
     try {
-        const response = await apiFetch(`${config.API_UPLOADS_ENDPOINT}/${uploadId}`, {
-            method: 'GET',
-            signal
-        })
+        const uploadState = await apiFetchJson<{
+            chunkSize: number
+            uploadedChunks: number[]
+        }>(`${config.API_UPLOADS_ENDPOINT}/${uploadId}`, { method: 'GET', signal })
 
-        const { chunk_size: chunkSize, uploaded_chunks: uploadedChunks } = await response.json()
-        return { chunkSize, uploadedChunks: new Set<number>(uploadedChunks) }
+        return { ...uploadState, uploadedChunks: new Set(uploadState.uploadedChunks) }
     } catch {}
 }
 
