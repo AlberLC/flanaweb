@@ -1,4 +1,4 @@
-import { UploadStatus } from '@/types/enums'
+import { UploadStatus } from '@/enums'
 
 export interface CreateUploadResponse {
     id: string
@@ -16,6 +16,12 @@ export interface FileResponse {
     height: number | null
     createdAt: string
     expiresAt: string | null
+}
+
+export interface FilesResponse {
+    files: FileResponse[]
+    nextCursor: string | null
+    total: number
 }
 
 export interface UploadContext {
