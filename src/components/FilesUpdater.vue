@@ -39,10 +39,10 @@ const files = computed({
     }
 })
 const hasExpiration = computed(() => typeof expirationValue.value === 'number')
-const noVariant = '' as 'outlined'
+const isFormValid = ref()
+const { mobile } = useDisplay()
 const snackbar = ref(false)
 const uploadContexts = reactive(new Map<File, UploadContext>())
-const is_form_valid = ref()
 
 function abortUpload(file: File): void {
     uploadContexts.get(file)?.controller.abort()
@@ -59,6 +59,29 @@ function getFileItemColor(file: File): string | undefined {
             return 'success'
         case UploadStatus.ERROR:
             return 'error'
+    }
+}
+
+function getUploadTooltipText(file: File): string {
+    const status = uploadContexts.get(file)?.status
+
+    switch (status) {
+        case UploadStatus.UPLOADING:
+            return 'Pausar subida'
+        case UploadStatus.PAUSED:
+            return 'Reanudar subida'
+        case UploadStatus.ERROR:
+            return 'Reintentar subida'
+        default:
+            return 'Subir archivo'
+    }
+}
+
+async function handleFileItemUpload(file: File): Promise<void> {
+    if (isFileItemUploading(file)) {
+        abortUpload(file)
+    } else if (isFormValid.value) {
+        await uploadFileItem(file)
     }
 }
 
@@ -228,27 +251,48 @@ async function uploadSingleFileItem(file: File): Promise<void> {
                     <v-file-upload-item :base-color="getFileItemColor(file)" v-bind="itemProps">
                         <template #append>
                             <div v-show="isFileItemUploaded(file)">
-                                <v-icon-btn @click="copyFileUrl(file)" color="success" icon="$linkVariant" v-ripple />
+                                <v-icon-btn
+                                    v-ripple
+                                    v-tooltip="{ location: 'top', openOnHover: !mobile, text: 'Copiar enlace' }"
+                                    aria-label="Copiar enlace"
+                                    color="success"
+                                    icon="$linkVariant"
+                                    @click="copyFileUrl(file)"
+                                />
                                 <a
-                                    :href="uploadContexts.get(file)?.fileUrl"
+                                    v-tooltip="{ location: 'top', openOnHover: !mobile, text: 'Descargar' }"
+                                    aria-label="Descargar"
                                     :download="uploadContexts.get(file)?.fileName"
+                                    :href="uploadContexts.get(file)?.fileUrl"
                                 >
                                     <v-icon-btn color="success" icon="$download" v-ripple />
                                 </a>
                             </div>
                             <div v-show="!isFileItemUploaded(file)">
                                 <v-icon-btn
-                                    @click="isFileItemUploading(file) ? abortUpload(file) : uploadSingleFileItem(file)"
+                                    v-ripple
+                                    v-tooltip="{
+                                        location: 'top',
+                                        openOnHover: !mobile,
+                                        text: getUploadTooltipText(file)
+                                    }"
+                                    :aria-label="getUploadTooltipText(file)"
                                     :color="getFileItemColor(file)"
                                     :icon="isFileItemUploading(file) ? '$pause' : '$cloudUpload'"
-                                    v-ripple
+                                    @click="handleFileItemUpload(file)"
                                 />
                             </div>
                             <v-icon-btn
-                                @click="removeFile(file, itemProps['onClick:remove'])"
+                                v-ripple
+                                v-tooltip="{
+                                    location: 'top',
+                                    openOnHover: !mobile,
+                                    text: 'Eliminar de la lista'
+                                }"
+                                aria-label="Eliminar de la lista"
                                 :color="getFileItemColor(file)"
                                 icon="$close"
-                                v-ripple
+                                @click="removeFile(file, itemProps['onClick:remove'])"
                             />
                         </template>
                         <v-progress-linear
