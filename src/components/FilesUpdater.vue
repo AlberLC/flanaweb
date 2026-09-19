@@ -313,4 +313,10 @@ async function uploadSingleFileItem(file: File): Promise<void> {
     margin: 0;
     padding: 0;
 }
+
+@media (width < 600px) {
+    .upload-controls {
+        flex-direction: column;
+    }
+}
 </style>
