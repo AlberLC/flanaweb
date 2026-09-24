@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useDisplay } from 'vuetify'
 
 import { config } from '@/config'
-import { createUpload, getUploadState, uploadFile } from '@/services/upload_service'
-import { UploadStatus } from '@/types/enums'
-import type { UploadContext, UploadState } from '@/types/interfaces'
+import { UploadStatus } from '@/enums'
+import type { UploadContext, UploadState } from '@/interfaces'
+import { createUpload, getUploadState, uploadFile } from '@/services/uploadService'
 
 const _expirationSelectItems = [
     { singular: 'segundo', plural: 'segundos', value: 1 },
@@ -117,7 +118,7 @@ async function removeFile(file: File, remove: () => void): Promise<void> {
 }
 
 async function uploadAllFileItems(): Promise<void> {
-    if (!is_form_valid.value) {
+    if (!isFormValid.value) {
         return
     }
 
@@ -125,13 +126,14 @@ async function uploadAllFileItems(): Promise<void> {
 }
 
 async function uploadFileItem(file: File): Promise<void> {
-    const uploadStatus = uploadContexts.get(file)?.status
+    let uploadContext = uploadContexts.get(file)
+    const uploadStatus = uploadContext?.status
+
     if (uploadStatus === UploadStatus.UPLOADING || uploadStatus === UploadStatus.UPLOADED) {
         return
     }
 
     const controller = new AbortController()
-    let uploadContext = uploadContexts.get(file)
 
     if (uploadContext) {
         uploadContext.status = UploadStatus.UPLOADING
@@ -181,23 +183,16 @@ async function uploadFileItem(file: File): Promise<void> {
         if (error instanceof Error && error.name === 'AbortError') {
             uploadContext.status = UploadStatus.PAUSED
         } else {
+            controller.abort(error)
             uploadContext.status = UploadStatus.ERROR
         }
     }
-}
-
-async function uploadSingleFileItem(file: File): Promise<void> {
-    if (!is_form_valid.value) {
-        return
-    }
-
-    await uploadFileItem(file)
 }
 </script>
 
 <template>
     <div class="files-updater">
-        <v-file-upload class="file-upload" v-model="files" hide-details multiple>
+        <v-file-upload v-model="files" class="file-upload" hide-details multiple>
             <v-file-upload-dropzone
                 class="file-upload-dropzone"
                 density="comfortable"
@@ -205,12 +200,11 @@ async function uploadSingleFileItem(file: File): Promise<void> {
                 scrim="primary"
             />
 
-            <v-form v-show="files.length" class="upload-controls" v-model="is_form_valid">
+            <v-form v-show="files.length" v-model="isFormValid" class="upload-controls">
                 <v-text-field
-                    class="expiration-value-field"
                     v-model.number="expirationValue"
-                    @input="onInput"
                     autocomplete="off"
+                    class="expiration-value-field"
                     density="comfortable"
                     hide-details
                     hide-spin-buttons
@@ -221,26 +215,26 @@ async function uploadSingleFileItem(file: File): Promise<void> {
                     placeholder="Nunca"
                     :rules="expirationValueRules"
                     variant="outlined"
+                    @input="onInput"
                 >
                     <template #append-inner>
                         <v-select
                             v-show="hasExpiration"
-                            class="expiration-unit-select"
-                            :items="expirationSelectItems"
                             v-model="expirationUnit"
+                            class="expiration-unit-select"
                             density="comfortable"
                             hide-details
+                            :items="expirationSelectItems"
                             no-auto-scroll
-                            :variant="noVariant"
                         />
                     </template>
                 </v-text-field>
                 <v-btn
                     class="upload-button"
-                    @click="uploadAllFileItems"
+                    :disabled="!isFormValid"
                     prepend-icon="$cloudUpload"
-                    :disabled="!is_form_valid"
                     variant="tonal"
+                    @click="uploadAllFileItems"
                 >
                     Subir todos
                 </v-btn>
@@ -265,7 +259,7 @@ async function uploadSingleFileItem(file: File): Promise<void> {
                                     :download="uploadContexts.get(file)?.fileName"
                                     :href="uploadContexts.get(file)?.fileUrl"
                                 >
-                                    <v-icon-btn color="success" icon="$download" v-ripple />
+                                    <v-icon-btn v-ripple color="success" icon="$download" />
                                 </a>
                             </div>
                             <div v-show="!isFileItemUploaded(file)">
@@ -296,11 +290,11 @@ async function uploadSingleFileItem(file: File): Promise<void> {
                             />
                         </template>
                         <v-progress-linear
-                            :model-value="uploadContexts.get(file)?.progress"
                             absolute
                             :active="isProgressVisible(file)"
                             :indeterminate="isProgressIndeterminate(file)"
                             location="bottom"
+                            :model-value="uploadContexts.get(file)?.progress"
                             rounded
                         />
                     </v-file-upload-item>
@@ -308,7 +302,7 @@ async function uploadSingleFileItem(file: File): Promise<void> {
             </v-file-upload-list>
         </v-file-upload>
 
-        <v-snackbar v-model="snackbar" rounded="pill" timeout="2000">Enlace copiado.</v-snackbar>
+        <v-snackbar v-model="snackbar" rounded="pill" timeout="2000"> Enlace copiado. </v-snackbar>
     </div>
 </template>
 
@@ -324,10 +318,11 @@ async function uploadSingleFileItem(file: File): Promise<void> {
 
 .upload-controls {
     display: flex;
+    gap: 15px;
     align-items: center;
     align-self: center;
-    padding: 50px 0 20px 0;
-    gap: 15px;
+
+    padding: 50px 0 20px;
 }
 
 .expiration-value-field :deep(input:not(:placeholder-shown)) {
@@ -335,8 +330,8 @@ async function uploadSingleFileItem(file: File): Promise<void> {
 }
 
 .expiration-value-field :deep(.v-field) {
-    padding: 0;
     width: 190px;
+    padding: 0;
     font-size: 1.2rem;
 }
 
@@ -348,9 +343,17 @@ async function uploadSingleFileItem(file: File): Promise<void> {
     width: 120px;
 }
 
+.expiration-unit-select :deep(.v-field__overlay) {
+    display: none;
+}
+
+.expiration-unit-select :deep(.v-field__outline) {
+    display: none;
+}
+
 .upload-button {
+    padding: 27px 40px 26px;
     font-size: 1.2rem;
-    padding: 27px 40px 26px 40px;
 }
 
 .file-upload-list {

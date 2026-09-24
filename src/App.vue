@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import FilesUpdater from '@/components/FilesUpdater.vue'
+import FilesUploader from '@/components/FilesUploader.vue'
 </script>
 
 <template>
     <v-app>
         <v-main class="main">
-            <FilesUpdater class="files-updater" />
+            <FilesUploader class="files-updater" />
         </v-main>
     </v-app>
 </template>
